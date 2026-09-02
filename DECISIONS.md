@@ -3,6 +3,10 @@
 Plain-language reasoning behind the choices in this build, for future-me.
 Not a changelog — see git log / SESSION_LOG.md for that.
 
+_Status (as of Session 1): every decision below is BUILT and covered by
+the passing test suite. None is yet VERIFIED against a live API review —
+that check is still pending the user's hands-on run._
+
 ## Direct-context prompting, not RAG
 
 An ITP is a single document, at most a few thousand rows of table data.
@@ -69,3 +73,25 @@ output. Findings are only as good as the text the model actually sees —
 this is a manual check against silent parsing damage, not an automated
 one, because judging "did this table get mangled" is a task a human eye
 is faster and more reliable at than writing a structural validator for.
+
+## Accept `.doc` in the uploader (to deliver the friendly message)
+
+`.doc` still isn't parsed (see "Parsing library choices"), but the
+uploader now lists `doc` as an accepted type anyway. Reason: if it isn't
+listed, Streamlit rejects the file itself with its own generic message,
+and the carefully worded "please re-save as `.docx`" error never reaches
+the user. Since the client's real ITP sample _is_ a `.doc`, that friendly
+message is exactly the one they'll hit first. Listing `doc` lets the file
+through to the parser, which raises the helpful error the UI then shows.
+So the app accepts the upload only to give a better rejection.
+
+## Graceful failure around the review API call
+
+The call to the model is wrapped in try/except and surfaces failures as an
+`st.error` message rather than letting them crash the app into a raw Python
+traceback. The most likely real-world failures — an invalid/expired API
+key, a rate limit, a dropped connection, or a model id that doesn't
+resolve — all happen at exactly the moment the user is trying the tool for
+the first time. A traceback there reads as "broken"; a plain-language
+message reads as "here's what to fix." This also keeps any earlier
+successful result on screen instead of wiping it on a later failure.

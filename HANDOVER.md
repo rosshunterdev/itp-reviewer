@@ -1,41 +1,65 @@
 # HANDOVER.md
 
+_As of Session 1 (2026-09-02). See SESSION_LOG.md for what happened._
+
 ## Current state
 
-Phase 1 is built end-to-end via TDD: parsing (`.xlsx`/`.pdf`/`.docx`),
-adversarial review with forced tool-use, categorized findings, markdown
-and docx report downloads, and a Streamlit UI wiring it all together.
-Full pytest suite passes. Not yet run live against the real API by the
-user.
+Phase 1 is built end-to-end and merge-ready on `feature/phase-1-build`:
+parsing (`.xlsx`/`.pdf`/`.docx`, table-preserving, friendly `.doc`
+message), adversarial review via forced tool-use, categorized advisory
+findings, markdown + docx report downloads, and a Streamlit UI wiring it
+together with results persisted across reruns.
+
+**Verified:** full pytest suite `17 passed`; real `.xlsx` parses with all
+12 ITP columns intact. **Not verified:** a live review with a real API key
+(see next action).
+
+## Git state
+
+- Branch `feature/phase-1-build`, 11 commits, forked from `main` at
+  `b623665`. Kept as-is (user's choice) — NOT merged to `main`.
+- No git remote configured; nothing pushed.
+- Working tree clean.
+- `samples/` and `.streamlit/secrets.toml` are gitignored (client files /
+  secret). Only `secrets.toml.example` is committed.
+
+## Next action (the one thing to do next)
+
+Run the live validation — a subagent couldn't, it needs a real key:
+1. `copy .streamlit\secrets.toml.example .streamlit\secrets.toml`, add your
+   `ANTHROPIC_API_KEY`.
+2. `.venv\Scripts\streamlit run app.py`
+3. Upload `samples\GT_Civil_..._ITP_Template.xlsx`, open the parse-preview
+   expander, confirm the table looks right.
+4. Click Review (standalone mode); check findings are categorized,
+   advisory ("consider…"), and relevant.
+
+**Watch:** the model constant is `claude-sonnet-5` (`src/config.py`). If the
+first review errors with model-not-found, that's the id to update — it now
+shows as a clean `st.error`, not a crash. This is the main unverified
+assumption in the build.
 
 ## Known limitations / next steps
 
-1. **Proposal cross-check mode is built but not yet validated.** The
-   `proposal_mismatch` category and the cross-check prompt path exist and
-   are exercised by unit tests, but there is no real matched
-   proposal/scope-of-works document to test against yet — only the ITP
-   samples exist. Revisit once a real proposal file is available:
-   run it through and sanity-check the findings the same way standalone
-   review was checked.
-2. **The review checklist is based on general ITP/construction QA
-   knowledge, not calibrated against the client's own AI reviewer
-   output.** The categories and what counts as a gap (missing witness
-   point, vague acceptance criteria, etc.) were reasoned from first
-   principles, not from a set of actual fix-lists the client's customers
-   have sent back. Revisit and tune the prompt once real reviewer
-   feedback exists to compare against.
-3. **Legacy `.doc` files are not supported.** If the user has an old
-   binary `.doc` ITP, the app returns a friendly error — re-save it as
-   `.docx` in Word first. See DECISIONS.md for why this wasn't built.
-4. **Live end-to-end review still needs manual validation.** The build
-   was verified with unit/mocked tests. Nobody has yet run a real ITP
-   through the app with a real `ANTHROPIC_API_KEY` and checked the actual
-   findings for sanity, tone (advisory, not directive), and usefulness.
-   That's the next concrete step before treating this as production-ready
-   for real use.
+1. **Proposal cross-check is built but unvalidated.** The
+   `proposal_mismatch` path exists and is unit-tested, but there's no real
+   matched proposal to test against yet. Revisit when one exists.
+2. **The checklist isn't calibrated to the client's real reviewer output.**
+   Categories/gaps were reasoned from general ITP QA knowledge, not from
+   actual fix-lists the client's customers have sent back. Tune the prompt
+   once that data exists.
+3. **Legacy `.doc` isn't parsed.** The uploader accepts it but the app
+   returns a friendly "re-save as `.docx`" message. To test the Word path,
+   re-save `samples\ITP 1_ Riverside Tauriko PS.doc` as `.docx`.
 
-## Next action
+## Deferred minors (from review — none block use)
 
-Add a real `ANTHROPIC_API_KEY` to `.streamlit/secrets.toml`, run
-`.venv/Scripts/streamlit run app.py`, upload a real ITP sample, and read
-the findings end to end.
+- No direct unit test for the PDF empty-content warning path (verified by
+  inspection).
+- docx report empty-case and grouping paths untested (markdown paths are).
+- `app.py` re-parses uploads on each rerun (no `@st.cache_data`); no
+  download button when there are zero findings; on-screen category grouping
+  lacks the `"other"` fallback the report has (harmless — enum-constrained).
+
+_SDD ledger + per-task reports preserved under
+`.superpowers/sdd/2026-09-02-itp-reviewer/` until the branch is merged._
