@@ -6,6 +6,22 @@ st.set_page_config(page_title="ITP Reviewer", layout="wide")
 st.title("ITP Reviewer")
 st.caption("Adversarial QA review of a draft Inspection Test Plan. Findings are advisory.")
 
+with st.expander("How to use this"):
+    st.markdown(
+        """
+1. **Upload your draft ITP** — Excel, PDF, or Word. Optionally add the matching
+   proposal/scope to cross-check the two against each other.
+2. **Open the preview** to confirm the table came through cleanly before reviewing.
+3. **Click Review.** The tool reads the ITP the way an adversarial QA reviewer
+   would and lists things worth a second look.
+4. **Each finding** says what it saw, why it matters, and a suggested action.
+   Download a report to share or file.
+
+⚠️ Findings are **advisory, not pass/fail** — prompts for a qualified reviewer to
+consider. Always apply your own engineering judgement.
+"""
+    )
+
 if "ANTHROPIC_API_KEY" in st.secrets:
     os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
 
