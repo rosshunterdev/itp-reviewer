@@ -3,9 +3,12 @@
 Plain-language reasoning behind the choices in this build, for future-me.
 Not a changelog — see git log / SESSION_LOG.md for that.
 
-_Status (as of Session 1): every decision below is BUILT and covered by
-the passing test suite. None is yet VERIFIED against a live API review —
-that check is still pending the user's hands-on run._
+_Status (as of Session 2): every decision below is BUILT and covered by
+the passing test suite. The standalone review is now VERIFIED against a
+live API review (Session 2 — 22 categorized advisory findings on the real
+`.xlsx`, `claude-sonnet-5` confirmed valid). The proposal cross-check path
+is still BUILT-not-VERIFIED — no matched ITP+proposal pair exists to test
+it against yet._
 
 ## Direct-context prompting, not RAG
 
@@ -95,3 +98,27 @@ resolve — all happen at exactly the moment the user is trying the tool for
 the first time. A traceback there reads as "broken"; a plain-language
 message reads as "here's what to fix." This also keeps any earlier
 successful result on screen instead of wiping it on a later failure.
+
+## Deliver by live demo now; defer hosting to Phase 2 (Session 2)
+
+The question was how to get the tool to the client. Decision: present it
+by driving it live (screen-share or in person) rather than hosting it and
+handing over a URL. Reason: hosting turns three things that don't exist
+into hard prerequisites, and none is a code problem —
+
+1. **Auth.** The app has none. A public URL means anyone who finds it can
+   run reviews on our API key, i.e. spend our money. A password gate is
+   non-negotiable before any public deployment.
+2. **API key / billing.** The app uses our Anthropic key. Client hands-on
+   use spends our credits until we decide: our key (and bill him) or his
+   own key. A business call, not a technical one.
+3. **Data privacy.** Client ITPs are sent to Anthropic's API. Fine
+   (no training on API data), but it should be stated to the client
+   plainly, not discovered.
+
+Phase 1's brief is a single internal user, so a live demo is in-scope and
+hosting is genuinely a later phase. When Phase 2 starts, the cheapest
+hands-on path is Streamlit Community Cloud (deploys from a private GitHub
+repo) with a password added first; a fuller cloud host (Azure Container
+Apps / Render) is the alternative if more control is wanted. No remote is
+configured yet, so any hosting route starts with pushing to a repo.

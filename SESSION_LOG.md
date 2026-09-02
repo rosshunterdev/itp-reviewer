@@ -1,5 +1,30 @@
 # SESSION_LOG.md
 
+## Session 2 — 2026-09-03 — Live validation, instructions, merge to main
+
+**Did:** Ran the live end-to-end validation that Session 1 left pending;
+added a collapsed "How to use this" instructions expander to `app.py`;
+merged `feature/phase-1-build` into `main` (`--no-ff`, branch kept).
+Advised the user on client delivery (demo live now; hosting = Phase 2).
+
+**Decided:** Present to the client via a self-driven live demo for now —
+do NOT host yet. Hosting deferred to Phase 2, scoped to three
+prerequisites: authentication (none exists), the API-key/billing decision
+(whose key pays), and a data-privacy line for client ITPs. See DECISIONS.
+
+**Broke or found:** No matched ITP+proposal pair exists in `samples/` — it
+holds two ITPs (Riverside WWPS `.xlsx`, Riverside Tauriko `.doc`) and three
+construction drawing sets, but no written proposal/scope document. So the
+proposal cross-check path stays unvalidated. Also: Streamlit's first-run
+email prompt blocked the `!`-runner; fixed permanently with an empty-email
+`~/.streamlit/credentials.toml`.
+
+**Verified:** Live standalone review returned 22 categorized, advisory
+findings on the real GT_Civil Riverside WWPS `.xlsx` — `claude-sonnet-5`
+confirmed valid on the account (Session 1's main unverified assumption,
+now resolved). Full pytest suite re-run after the UI edit: `17 passed`
+(`.venv/Scripts/python -m pytest`).
+
 ## Session 1 — 2026-09-02 — Phase 1 build
 
 **Did:** Scoped, designed, planned, and built Phase 1 of the ITP Reviewer
