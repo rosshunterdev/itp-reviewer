@@ -9,8 +9,8 @@ st.caption("Adversarial QA review of a draft Inspection Test Plan. Findings are 
 if "ANTHROPIC_API_KEY" in st.secrets:
     os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
 
-itp_file = st.file_uploader("ITP file (required)", type=["xlsx", "pdf", "docx"])
-proposal_file = st.file_uploader("Proposal / scope of works (optional)", type=["xlsx", "pdf", "docx"])
+itp_file = st.file_uploader("ITP file (required)", type=["xlsx", "pdf", "docx", "doc"])
+proposal_file = st.file_uploader("Proposal / scope of works (optional)", type=["xlsx", "pdf", "docx", "doc"])
 
 
 def _safe_parse(f, label):
@@ -43,12 +43,15 @@ if "findings" not in st.session_state:
     st.session_state["findings"] = None
 
 if st.button("Review", type="primary", disabled=itp_doc is None):
-    with st.spinner("Running adversarial review…"):
-        findings = review.run_review(
-            itp_doc.text,
-            proposal_doc.text if proposal_doc else None,
-        )
-    st.session_state["findings"] = findings
+    try:
+        with st.spinner("Running adversarial review…"):
+            findings = review.run_review(
+                itp_doc.text,
+                proposal_doc.text if proposal_doc else None,
+            )
+        st.session_state["findings"] = findings
+    except Exception as e:
+        st.error(f"The review could not be completed. Check your ANTHROPIC_API_KEY and network connection, then try again.\n\nDetails: {e}")
 
 if st.session_state.get("findings") is not None:
     findings = st.session_state["findings"]
