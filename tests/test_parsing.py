@@ -17,8 +17,13 @@ def test_unknown_extension_rejected():
 def test_xlsx_preserves_itp_columns():
     pd = parsing.parse(SAMPLE_XLSX.name, SAMPLE_XLSX.read_bytes())
     # All 12 ITP table column headers must survive parsing.
-    for col in ["Acceptance Criteria", "Inspection Point", "Reference",
-                "Witness / Release By", "QA Record / Evidence"]:
+    all_12_columns = [
+        "Item", "Work Package / Activity", "Inspection / Test / Check",
+        "Acceptance Criteria", "Reference", "Frequency / Timing",
+        "Inspection Point", "GT Civil Responsibility", "Witness / Release By",
+        "QA Record / Evidence", "Result / Status", "Comments / NCR Ref.",
+    ]
+    for col in all_12_columns:
         assert col in pd.text, f"missing column: {col}"
     # A known data cell survives too (item numbering).
     assert "1.1" in pd.text

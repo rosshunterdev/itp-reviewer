@@ -57,6 +57,7 @@ def _parse_xlsx(data: bytes) -> ParsedDoc:
 def _parse_pdf(data: bytes) -> ParsedDoc:
     import pdfplumber
     lines, warnings = [], []
+    any_content = False
     with pdfplumber.open(io.BytesIO(data)) as pdf:
         for i, page in enumerate(pdf.pages, 1):
             lines.append(f"### Page {i}")
@@ -66,12 +67,14 @@ def _parse_pdf(data: bytes) -> ParsedDoc:
                     line = _row_to_line(row)
                     if line:
                         lines.append(line)
+                        any_content = True
             page_text = page.extract_text() or ""
             if page_text.strip():
                 lines.append(page_text.strip())
+                any_content = True
             lines.append("")
     text = "\n".join(lines).strip()
-    if not text:
+    if not any_content:
         warnings.append("No extractable text found — the PDF may be scanned images.")
     return ParsedDoc(text=text, preview=text, warnings=warnings)
 
