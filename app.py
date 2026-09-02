@@ -39,12 +39,19 @@ if proposal_file:
 mode = "Cross-check (ITP vs proposal)" if proposal_doc else "Standalone ITP review"
 st.info(f"Mode: {mode}")
 
+if "findings" not in st.session_state:
+    st.session_state["findings"] = None
+
 if st.button("Review", type="primary", disabled=itp_doc is None):
     with st.spinner("Running adversarial review…"):
         findings = review.run_review(
             itp_doc.text,
             proposal_doc.text if proposal_doc else None,
         )
+    st.session_state["findings"] = findings
+
+if st.session_state.get("findings") is not None:
+    findings = st.session_state["findings"]
     if not findings:
         st.success("No findings identified.")
     else:
