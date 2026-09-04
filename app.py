@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 from src import parsing, review, report, schema
-from src import generation, gen_report, gen_schema
+from src import generation, gen_report
 
 st.set_page_config(page_title="ITP Reviewer", layout="wide")
 st.title("ITP Reviewer")
