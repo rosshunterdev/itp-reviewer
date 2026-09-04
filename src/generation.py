@@ -93,6 +93,12 @@ def run_generation(
             }
         ],
     )
+    if resp.stop_reason == "max_tokens":
+        raise RuntimeError(
+            "The model ran out of output space before finishing the ITP. "
+            "This usually means the specification is very large. "
+            "Try uploading just the specification without supporting documents."
+        )
     for block in resp.content:
         if getattr(block, "type", None) == "tool_use" and block.name == "generate_itp":
             items = [
