@@ -80,7 +80,7 @@ def run_generation(
     client=None,
 ) -> tuple[list[gen_schema.ITPItem], list[gen_schema.HoldPoint]]:
     client = client or _get_client()
-    resp = client.messages.create(
+    kwargs = dict(
         model=config.MODEL,
         max_tokens=config.GEN_MAX_TOKENS,
         system=generation_system_prompt(),
@@ -93,6 +93,14 @@ def run_generation(
             }
         ],
     )
+    try:
+        resp = client.messages.create(**kwargs)
+    except Exception as e:
+        if "streaming" in str(e).lower() or "10 minutes" in str(e).lower():
+            with client.messages.stream(**kwargs) as stream:
+                resp = stream.get_final_message()
+        else:
+            raise
     if resp.stop_reason == "max_tokens":
         raise RuntimeError(
             "The model ran out of output space before finishing the ITP. "
