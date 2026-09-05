@@ -1,61 +1,85 @@
 # HANDOVER.md
 
-_As of Session 2 (2026-09-03). See SESSION_LOG.md for what happened._
+_As of Session 3 (2026-09-05). See SESSION_LOG.md for what happened._
 
 ## Current state
 
-Phase 1 is built, tested, **live-validated, and merged to `main`**. The
-standalone review works end-to-end: a real `.xlsx` ITP produced 22
-categorized, advisory findings against a real API key, and the
-`claude-sonnet-5` model id is confirmed valid on the account. A collapsed
-"How to use this" instructions block now sits at the top of the app.
+Phase 2 ITP generation feature is **built and live-tested** on branch
+`feature/phase-2-generation` (git worktree at
+`.claude/worktrees/feature+phase-2-generation`). The user generated a
+full draft ITP from the real 169-page Waitomo Masterspec and sent the
+Word report to the client for feedback. **Not yet merged to `main`.**
 
-**Verified:** live standalone review (22 findings); full pytest suite `17
-passed`. **Not verified:** the proposal cross-check path — see next steps.
+Full pytest suite: **35 passed, 1 skipped** (xlsx sample file check).
 
 ## Git state
 
-- On `main`. `feature/phase-1-build` was merged with `--no-ff` (merge
-  commit `e69d865`) and kept, not deleted.
-- No git remote configured; nothing pushed anywhere.
-- Working tree: session-doc edits from this close are the only pending
-  changes (commit them as the last step).
-- `samples/` and `.streamlit/secrets.toml` are gitignored. `secrets.toml`
-  now exists locally with a real key (never committed).
+- Branch: `feature/phase-2-generation` (9 commits ahead of `main`)
+- Worktree: `.claude/worktrees/feature+phase-2-generation`
+- Working tree: clean
+- No git remote configured; nothing pushed
+- `.streamlit/secrets.toml` must be copied into the worktree manually
+  (gitignored, not inherited)
 
-## Next steps (ordered)
+## What's on the branch
 
-Both remaining Phase 1 items are blocked on **external files the user must
-source** — there is no more code to write for them right now:
+New files:
+- `src/gen_schema.py` — ITPItem (10 fields), HoldPoint, GENERATE_ITP_TOOL
+- `src/generation.py` — generation prompt, API call with streaming fallback
+- `src/gen_report.py` — markdown, docx, and text-bridge output
+- Tests: `test_gen_schema.py`, `test_generation.py`, `test_gen_report.py`
 
-1. **Validate the proposal cross-check.** The path is built and
-   unit-tested but has never run on real matched files. Needs one ITP plus
-   its corresponding written proposal/scope. `samples/` has no such pair
-   (two ITPs + three drawing sets only). Blocked until a real proposal
-   file exists.
-2. **Calibrate the checklist to the client's real output.** The categories
-   were reasoned from general ITP QA knowledge, not from actual fix-lists
-   the client's reviewers produce. This is the biggest quality lever before
-   sending to the client. Needs one real reviewer fix-list to tune the
-   prompt against. Blocked until that exists.
+Modified:
+- `src/config.py` — added `GEN_MAX_TOKENS = 32000`
+- `app.py` — rewritten with two tabs (Generate ITP / Review ITP)
 
-## Phase 2 (when it starts) — hosting
+Key design: streaming fallback in `run_generation()` — tries sync
+`create()` first, catches streaming-required errors for large specs
+(>10 min), retries with `stream()`. This keeps test mocks simple.
 
-Deliver to the client by live demo for now (decided this session). Hosting
-is deferred and scoped to three prerequisites, none of them code-hard:
-authentication (none exists yet), the API-key/billing decision (whose key
-pays), and a client data-privacy line. Cheapest hands-on route later:
-Streamlit Community Cloud + a password, deployed from a private GitHub repo
-(none configured yet). Full reasoning in DECISIONS.md.
+## What needs doing next (ordered by priority)
 
-## Known limitations / notes
+### 1. Fix supporting documents error (bug)
+The user reported an error when adding supporting documents alongside the
+spec. Not investigated yet. Likely a parsing issue with one of the uploaded
+files, or the combined input exceeding token limits. Reproduce by uploading
+the Masterspec plus any PDF from `samples/` as a supporting doc.
 
-- Legacy `.doc` isn't parsed by design — the app asks the user to re-save
-  as `.docx` (see DECISIONS.md). The Riverside Tauriko sample is a `.doc`.
-- Big sample PDFs are construction drawings, likely image/vector-heavy;
-  not useful as proposal-text input even if uploaded.
-- `app.py` re-parses uploads on each rerun (no `@st.cache_data`); no
-  download button at zero findings. Harmless for single-user Phase 1.
+### 2. Wait for client feedback
+The user sent the generated Word report to the client. Waiting on:
+- Does the level of detail match what they'd normally put in an ITP?
+- Does the client want a specific template/format? (asked them to send one)
+- The Cosgroves engineer spec — without it, the generator only covers
+  architectural items, missing civil/structural (earthworks, drainage, etc.)
+
+### 3. Regression-test the Review tab
+The review tab logic is unchanged from Phase 1 but is now wrapped in a
+Streamlit tab. Should be tested live to confirm nothing broke. Upload
+the GT Civil `.xlsx` and verify 22-ish findings still appear.
+
+### 4. Merge to main
+Once items 1 and 3 are done, merge `feature/phase-2-generation` into
+`main` with `--no-ff`. Use the `finishing-a-development-branch` skill.
+
+### 5. Future: xlsx output format
+The client likely wants the ITP in their existing xlsx template format
+(GT Civil template has 5 sheets, 12-column structure). Deferred until
+they send an empty template. Currently outputs markdown and docx only.
+
+### 6. Future: gap analysis and auto-fix
+Two other features the client requested from the Phase 1 demo. Gap
+analysis (compare spec vs ITP to find missing coverage) and auto-apply
+review fixes. Not started. See memory file `phase-2-client-direction.md`.
+
+## Known limitations
+
+- Legacy `.doc` isn't parsed — app asks user to re-save as `.docx`
+- Supporting documents feature untested/potentially broken (see item 1)
+- No auth, no hosting — delivered via live demo only
+- Few-shot examples are hardcoded from one GT Civil ITP template
+- `app.py` re-parses uploads on each Streamlit rerun (no caching)
 
 _SDD ledger + per-task reports preserved under
-`.superpowers/sdd/2026-09-02-itp-reviewer/`._
+`.superpowers/sdd/2026-09-04-itp-generation/`._
+_Design spec: `docs/superpowers/specs/2026-09-04-itp-generation-design.md`_
+_Implementation plan: `docs/superpowers/plans/2026-09-04-itp-generation.md`_
