@@ -9,9 +9,9 @@ Item | Work Package / Activity | Inspection / Test / Check | Acceptance Criteria
 1.1 | Pre-start / document control | Approved-for-construction drawings, specifications, ITP, methodology and JSA available at workface | Latest approved revisions only; superseded documents removed from workface | Contract Docs; approved drawings; Quality Plan | Before each work package | H | Site Manager / QA | Principal's Rep as applicable | Approved documents / document register
 2.1 | Survey and set-out | Verify survey control, datum and benchmark against approved design | Survey control verified; set-out to approved coordinates/levels; NZVD2016 where required | Contract drawings; survey specification | Initial set-out and each structure/pipeline | H | Surveyor | QA / Engineer as required | Set-out sheet / survey file
 2.2 | Survey and set-out | Check location, line, level and offsets before excavation / installation | Within drawing/specification tolerances | Approved drawings; TCC IDC | Each structure / pipeline section | W | Surveyor / Site Engineer | Engineer / Council as notified | Pre-install survey record
-5.3 | Earthworks / cohesive fill | Compaction / shear vane / air voids testing | Air voids: max 12% single test, average ≤10%; undrained shear strength ≥120 kPa or as specified | Contract §5.3.2 | Min. 1 set / 500 m³ plus random testing as specified | H | IANZ Lab / QA | Geotechnical Engineer | Lab / field test results
-8.1 | Concrete works | Pre-pour inspection: excavation/formwork, reinforcement, cover, cast-ins, penetrations | Matches approved structural drawings; reinforcement and cover correct; formwork stable and clean | Contract §9 Reinforced Concrete; NZS 3109; approved drawings | Each pour | H | Site Engineer / QA | Engineer / structural reviewer as required | Pre-pour checklist, photos
-9.3 | Gravity pipelines | Line, level and gradient during laying | Pipe laser / survey used; no backfall; within specified line/level tolerances | TCC IDC; Contract §7.4 / §7.8 | Each pipe / reach | W | Surveyor / Site Engineer | Engineer / Council as required | Pipe laying sheet / survey data
+5.3 | Earthworks / cohesive fill | Compaction / shear vane / air voids testing | Air voids: max 12% single test, average ≤10%; undrained shear strength ≥120 kPa or as specified | Contract Section 5.3.2 (Spec p.47) | Min. 1 set / 500 m³ plus random testing as specified | H | IANZ Lab / QA | Geotechnical Engineer | Lab / field test results
+8.1 | Concrete works | Pre-pour inspection: excavation/formwork, reinforcement, cover, cast-ins, penetrations | Matches approved structural drawings; reinforcement and cover correct; formwork stable and clean | Contract Section 9 (Spec p.82); NZS 3109 (NZ Standard) | Each pour | H | Site Engineer / QA | Engineer / structural reviewer as required | Pre-pour checklist, photos
+9.3 | Gravity pipelines | Line, level and gradient during laying | Pipe laser / survey used; no backfall; within specified line/level tolerances | TCC IDC (External code); Contract Section 7.4 / 7.8 (Spec p.63) | Each pipe / reach | W | Surveyor / Site Engineer | Engineer / Council as required | Pipe laying sheet / survey data
 10.3 | Pressure / rising main | Hydrostatic pressure test | Test pressure, duration and acceptance criteria comply with Contract / Council requirements | Contract testing specification; TCC IDC | Each test section | H | Contractor / test specialist | Engineer / Council | Pressure test certificate / chart
 15.3 | Close-out | Compile QA dossier / handover records | All ITPs closed; hold points released; test results passed; NCRs closed/accepted | Contract Quality Plan / handover requirements | Before Practical Completion | H | QA Manager / Project Manager | Principal's Rep / Engineer | QA dossier / handover index
 """.strip()
@@ -31,7 +31,12 @@ def generation_system_prompt() -> str:
         "- Acceptance criteria — specific, measurable, never vague. Include actual "
         "values, tolerances, or standards thresholds where the spec provides them.\n"
         "- Reference — cite specific standards (e.g. NZS 3109), spec section numbers "
-        "(e.g. Contract §7.4), codes, or contract requirements. Never leave blank.\n"
+        "(e.g. Contract Section 7.4), codes, or contract requirements. Never leave blank. "
+        "Tag each reference with its source in parentheses: '(Spec p.XX)' for items "
+        "found in the uploaded specification (include the page number), "
+        "'(NZ Standard)' for New Zealand standards, '(External code)' for engineering "
+        "codes or council requirements, '(Contract)' for contract documents. "
+        "This helps the reader trace where each reference came from.\n"
         "- Frequency / timing — when or how often\n"
         "- Inspection point — H (Hold: work stops until released), W (Witness: "
         "notified and may attend), S (Surveillance: routine monitoring), "
