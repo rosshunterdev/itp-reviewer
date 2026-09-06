@@ -4,10 +4,34 @@ from src import parsing, review, report, schema
 from src import generation, gen_report
 
 st.set_page_config(page_title="ITP Reviewer", layout="wide")
-st.title("ITP Reviewer")
 
 if "ANTHROPIC_API_KEY" in st.secrets:
     os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+
+
+def _check_password():
+    """Block the app behind a password if PASSWORD is set in secrets."""
+    if "PASSWORD" not in st.secrets:
+        return True
+
+    if st.session_state.get("authenticated"):
+        return True
+
+    st.title("ITP Reviewer")
+    password = st.text_input("Password", type="password")
+    if st.button("Log in", type="primary"):
+        if password == st.secrets["PASSWORD"]:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password.")
+    return False
+
+
+if not _check_password():
+    st.stop()
+
+st.title("ITP Reviewer")
 
 tab_generate, tab_review = st.tabs(["Generate ITP", "Review ITP"])
 
