@@ -3,10 +3,10 @@
 Plain-language reasoning behind the choices in this build, for future-me.
 Not a changelog — see git log / SESSION_LOG.md for that.
 
-_Status (as of Session 3): Phase 1 decisions below are all BUILT and
-VERIFIED. Phase 2 (generation) decisions are BUILT and TESTED with the
-real 169-page Masterspec. Supporting documents path is BUILT but
-NOT VERIFIED (user reported an error, not yet investigated)._
+_Status (as of Session 4): Phase 1 and Phase 2 decisions are all BUILT,
+TESTED, and MERGED to main. Client feedback changes (reference tagging,
+duplicate detection) are committed but not yet live-tested. Deployment
+decision made: Streamlit Community Cloud._
 
 ## Phase 1 decisions
 
@@ -171,6 +171,43 @@ produces 50+ ITP items, and the model hit `max_tokens` at 16000, returning
 a truncated (unusable) response. Doubled to 32000. Added truncation
 detection: if `stop_reason == "max_tokens"`, raise an explicit error
 rather than silently returning partial results.
+
+### Reference source tagging in generated ITPs (Session 4)
+
+Client feedback: they couldn't tell whether a reference came from the
+uploaded spec or from the model's training knowledge. Added prompt
+instructions to tag each reference with its source: `(Spec p.XX)` for
+items found in the spec (with page number), `(NZ Standard)` for NZ
+standards, `(External code)` for council/engineering codes, `(Contract)`
+for contract documents. This is a prompt-level solution — the model
+approximates page numbers from context position. Not perfectly accurate
+but gives the client a starting point to verify.
+
+### Duplicates & clutter review category (Session 4)
+
+Client asked the reviewer to flag double-up points and areas of confusion.
+Added `duplicates_clutter` as a dedicated category (8 total now) rather
+than lumping these under `internal_consistency` or `other`. Distinct
+category means these findings get their own section heading in the output,
+making them easy to find and act on.
+
+### Deploy on Streamlit Community Cloud (Session 4)
+
+Evaluated Streamlit Cloud, Railway, Render, Azure App Service, and
+self-hosted VPS. Chose Streamlit Cloud because: (a) free, (b) fastest
+setup (~15 min), (c) zero infrastructure to manage, (d) the app is a
+single-user internal tool so "public but unlisted URL" is fine. The URL
+won't appear in any directory — only people with the link can access it.
+
+Trade-offs accepted: no custom domain on free tier, US servers (not NZ/AU),
+sleeps after inactivity (~30s cold start). These are acceptable for the
+current use case. Migration path to Railway or Azure is straightforward if
+auth, custom domain, or data sovereignty becomes a requirement.
+
+User considered Vercel/Supabase for learning cloud development but agreed
+this project is a poor fit — it's a Python/Streamlit app with no database,
+no auth, no user accounts. Those tools shine for Next.js apps with users
+and stored data.
 
 ### Few-shot examples hardcoded in prompt (Session 3)
 

@@ -1,5 +1,41 @@
 # SESSION_LOG.md
 
+## Session 4 — 2026-09-07 — Client feedback, merge, deployment decision
+
+**Did:** Addressed three items of client feedback, merged Phase 2 to main,
+decided on deployment approach.
+
+Changes made:
+- Removed `§` symbol from generation examples and prompt — replaced with
+  "Section" throughout (`src/generation.py`)
+- Added reference source tagging — generator now tags each reference with
+  `(Spec p.XX)`, `(NZ Standard)`, `(External code)`, or `(Contract)` so
+  client can trace where each reference came from (`src/generation.py`)
+- Added `duplicates_clutter` review category — reviewer now flags repeated
+  inspection points, overlapping items, recommends merging
+  (`src/prompts.py`, `src/schema.py`, `tests/test_schema.py`)
+- Merged `feature/phase-2-generation` into `main` (`--no-ff`)
+- Updated HANDOVER.md for next session
+
+**Decided:**
+- Deploy on Streamlit Community Cloud (free, fastest path, good enough for
+  single-user internal tool). User considered Vercel/Supabase for learning
+  but agreed this project is a poor fit — no database, no auth, Python app.
+  Vercel/Supabase better suited to a future Next.js project with users and
+  stored data. Railway noted as middle-ground if cloud learning is wanted.
+- API key ownership still undecided — user's key or client's key. Set a
+  usage limit on Anthropic dashboard either way.
+
+**Verified:** 38 tests pass on main after merge. Client feedback changes
+not yet tested with a live generation run.
+
+**Not verified:**
+- The three client feedback changes need a live test run (generate from
+  Waitomo spec, check for no `§`, reference source tags, duplicate detection)
+
+**Git:** 4 session commits on `feature/phase-2-generation`, merged to `main`
+with `--no-ff`. 1 post-merge commit (HANDOVER.md). No remote configured.
+
 ## Session 3 — 2026-09-04/05 — Phase 2: ITP generation feature
 
 **Did:** Brainstormed, designed, planned, and built ITP generation (Phase 2
