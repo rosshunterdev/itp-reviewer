@@ -1,5 +1,60 @@
 # SESSION_LOG.md
 
+## Session 3 — 2026-09-04/05 — Phase 2: ITP generation feature
+
+**Did:** Brainstormed, designed, planned, and built ITP generation (Phase 2
+feature) end-to-end via subagent-driven development on branch
+`feature/phase-2-generation` in a git worktree. The feature reads a project
+specification PDF and produces a full draft ITP with inspection items, hold
+points, and acceptance criteria. User live-tested with the real 169-page
+Waitomo Masterspec and sent the generated Word report to the client for
+feedback.
+
+Modules created:
+- `src/gen_schema.py` — `ITPItem` (10 fields), `HoldPoint` (3 fields),
+  `GENERATE_ITP_TOOL` definition
+- `src/generation.py` — system prompt (ITP author persona), XML-tagged user
+  message, `run_generation()` with streaming fallback for large specs
+- `src/gen_report.py` — `to_markdown()`, `to_docx()`, `items_to_text()`
+  (review bridge)
+- `src/config.py` — added `GEN_MAX_TOKENS = 32000`
+- `app.py` — rewritten with two tabs: "Generate ITP" and "Review ITP"
+- Tests: `test_gen_schema.py` (4), `test_generation.py` (7),
+  `test_gen_report.py` (8) — total suite 35 passed
+
+**Decided:**
+- Single-pass direct-context generation (spec fits in 200k window)
+- Separate Generate/Review tabs with "Review this draft?" bridge
+- Report output (markdown + docx) now; xlsx deferred until client sends template
+- 8 hardcoded few-shot ITP example rows from GT Civil Riverside template
+- Streaming fallback: try sync `create()` first, catch streaming-required
+  error, retry with `stream()` — keeps mocks simple in tests
+- `GEN_MAX_TOKENS = 32000` (16000 truncated on the real spec)
+
+**Broke or found (fixed same session):**
+- Worktree doesn't copy gitignored files — had to manually copy
+  `.streamlit/secrets.toml` into the worktree
+- First generation attempt returned empty — `GEN_MAX_TOKENS` too low (16000),
+  increased to 32000 with truncation detection
+- Second attempt hit "Streaming is required for operations that may take
+  longer than 10 minutes" — added streaming fallback in `run_generation()`
+- Streaming fix initially broke tests (`hasattr(mock, "stream")` always
+  True) — switched to try/catch approach
+- Dead `gen_schema` import in `app.py` — removed
+
+**Verified:** Generation working end-to-end with real 169-page Masterspec
+(spec-only, no supporting docs). User downloaded Word report and sent to
+client. Full pytest suite: 35 passed, 1 skipped. Review tab not
+regression-tested this session (unchanged logic, just wrapped in tab).
+
+**Not verified:**
+- Supporting documents feature (user reported it errors — not investigated)
+- Review tab regression (logic unchanged, wrapped in tab)
+- Client feedback on output quality pending
+
+**Git:** 9 commits on `feature/phase-2-generation` from `main` at `d5e848b`.
+Branch not merged. No remote configured.
+
 ## Session 2 — 2026-09-03 — Live validation, instructions, merge to main
 
 **Did:** Ran the live end-to-end validation that Session 1 left pending;

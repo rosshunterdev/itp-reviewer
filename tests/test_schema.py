@@ -3,7 +3,8 @@ from src import schema
 def test_categories_exact():
     assert schema.CATEGORIES == [
         "hold_witness", "acceptance_criteria", "standards_reference",
-        "responsible_party", "internal_consistency", "proposal_mismatch", "other",
+        "responsible_party", "internal_consistency", "duplicates_clutter",
+        "proposal_mismatch", "other",
     ]
 
 def test_tool_shape():

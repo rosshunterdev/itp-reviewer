@@ -2,7 +2,8 @@ from dataclasses import dataclass
 
 CATEGORIES = [
     "hold_witness", "acceptance_criteria", "standards_reference",
-    "responsible_party", "internal_consistency", "proposal_mismatch", "other",
+    "responsible_party", "internal_consistency", "duplicates_clutter",
+    "proposal_mismatch", "other",
 ]
 
 CATEGORY_LABELS = {
@@ -11,6 +12,7 @@ CATEGORY_LABELS = {
     "standards_reference": "Standards & References",
     "responsible_party": "Responsible Party",
     "internal_consistency": "Internal Consistency",
+    "duplicates_clutter": "Duplicates & Clutter",
     "proposal_mismatch": "Proposal Cross-Check",
     "other": "Other",
 }
