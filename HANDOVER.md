@@ -1,72 +1,64 @@
 # HANDOVER.md
 
-_As of Session 3 (2026-09-05). See SESSION_LOG.md for what happened._
+_As of Session 4 (2026-09-07). See SESSION_LOG.md for what happened._
 
 ## Current state
 
-Phase 2 ITP generation feature is **built and live-tested** on branch
-`feature/phase-2-generation` (git worktree at
-`.claude/worktrees/feature+phase-2-generation`). The user generated a
-full draft ITP from the real 169-page Waitomo Masterspec and sent the
-Word report to the client for feedback. **Not yet merged to `main`.**
-
-Full pytest suite: **35 passed, 1 skipped** (xlsx sample file check).
+Phase 2 ITP generation feature is **merged to `main`**. 38 tests pass.
+Client has seen a live demo and provided feedback (all three items
+addressed this session). App is feature-complete and ready for deployment.
 
 ## Git state
 
-- Branch: `feature/phase-2-generation` (9 commits ahead of `main`)
-- Worktree: `.claude/worktrees/feature+phase-2-generation`
-- Working tree: clean
+- Branch: `main` (up to date, feature branch merged)
+- Worktree: `.claude/worktrees/feature+phase-2-generation` still exists (can be cleaned up)
+- Working tree: clean (untracked: `.claude/`, `docs/new-download/`)
 - No git remote configured; nothing pushed
-- `.streamlit/secrets.toml` must be copied into the worktree manually
-  (gitignored, not inherited)
+- `.streamlit/secrets.toml` gitignored, contains `ANTHROPIC_API_KEY`
 
-## What's on the branch
+## What was done this session
 
-New files:
-- `src/gen_schema.py` — ITPItem (10 fields), HoldPoint, GENERATE_ITP_TOOL
-- `src/generation.py` — generation prompt, API call with streaming fallback
-- `src/gen_report.py` — markdown, docx, and text-bridge output
-- Tests: `test_gen_schema.py`, `test_generation.py`, `test_gen_report.py`
-
-Modified:
-- `src/config.py` — added `GEN_MAX_TOKENS = 32000`
-- `app.py` — rewritten with two tabs (Generate ITP / Review ITP)
-
-Key design: streaming fallback in `run_generation()` — tries sync
-`create()` first, catches streaming-required errors for large specs
-(>10 min), retries with `stream()`. This keeps test mocks simple.
+1. **Removed `§` symbol** from generation examples and prompt — replaced
+   with "Section" throughout (`src/generation.py`)
+2. **Added reference source tagging** — generator now tags each reference
+   with `(Spec p.XX)`, `(NZ Standard)`, `(External code)`, or `(Contract)`
+   so the client can trace where each reference came from
+3. **Added duplicate/clutter detection** — new `duplicates_clutter` category
+   in the reviewer (`src/prompts.py`, `src/schema.py`) that flags repeated
+   inspection points, overlapping items, and recommends merging
+4. **Merged `feature/phase-2-generation` to `main`** with `--no-ff`
 
 ## What needs doing next (ordered by priority)
 
-### 1. Fix supporting documents error (bug)
-The user reported an error when adding supporting documents alongside the
-spec. Not investigated yet. Likely a parsing issue with one of the uploaded
-files, or the combined input exceeding token limits. Reproduce by uploading
-the Masterspec plus any PDF from `samples/` as a supporting doc.
+### 1. Deploy to Streamlit Community Cloud (immediate)
 
-### 2. Wait for client feedback
-The user sent the generated Word report to the client. Waiting on:
-- Does the level of detail match what they'd normally put in an ITP?
-- Does the client want a specific template/format? (asked them to send one)
-- The Cosgroves engineer spec — without it, the generator only covers
-  architectural items, missing civil/structural (earthworks, drainage, etc.)
+Decision made: deploy on Streamlit Cloud so the client can use it themselves.
 
-### 3. Regression-test the Review tab
-The review tab logic is unchanged from Phase 1 but is now wrapped in a
-Streamlit tab. Should be tested live to confirm nothing broke. Upload
-the GT Civil `.xlsx` and verify 22-ish findings still appear.
+Steps:
+1. Push repo to GitHub (private repo)
+2. Go to share.streamlit.io, connect the GitHub repo
+3. Set `ANTHROPIC_API_KEY` as a secret in the Streamlit Cloud dashboard
+4. Set main file to `app.py`
+5. Share the URL with the client
 
-### 4. Merge to main
-Once items 1 and 3 are done, merge `feature/phase-2-generation` into
-`main` with `--no-ff`. Use the `finishing-a-development-branch` skill.
+Considerations:
+- **API key ownership** — decide whether the user's key or the client's key
+  is used. Set a usage limit on the Anthropic dashboard either way.
+- App URL is public but unlisted (no directory). Fine for single-user internal
+  tool. If auth is needed later, migrate to Railway or Azure.
+- Free tier sleeps after inactivity — first load after sleep takes ~30s.
 
-### 5. Future: xlsx output format
-The client likely wants the ITP in their existing xlsx template format
-(GT Civil template has 5 sheets, 12-column structure). Deferred until
-they send an empty template. Currently outputs markdown and docx only.
+### 2. Test the three client feedback changes
 
-### 6. Future: gap analysis and auto-fix
+The client feedback changes (no `§`, reference source tags, duplicate
+detection) were committed but not yet tested with a live generation run.
+Run the app, upload the Waitomo spec, generate, and verify:
+- No `§` symbols appear anywhere
+- References show source tags like `(Spec p.47)`, `(NZ Standard)`
+- "Review this draft?" catches duplicates under the new category
+
+### 3. Future: gap analysis and auto-fix
+
 Two other features the client requested from the Phase 1 demo. Gap
 analysis (compare spec vs ITP to find missing coverage) and auto-apply
 review fixes. Not started. See memory file `phase-2-client-direction.md`.
@@ -74,12 +66,21 @@ review fixes. Not started. See memory file `phase-2-client-direction.md`.
 ## Known limitations
 
 - Legacy `.doc` isn't parsed — app asks user to re-save as `.docx`
-- Supporting documents feature untested/potentially broken (see item 1)
-- No auth, no hosting — delivered via live demo only
+- No auth, no hosting yet — local only until deployment
 - Few-shot examples are hardcoded from one GT Civil ITP template
 - `app.py` re-parses uploads on each Streamlit rerun (no caching)
 
-_SDD ledger + per-task reports preserved under
-`.superpowers/sdd/2026-09-04-itp-generation/`._
+## Architecture quick reference
+
+- `app.py` — two tabs: Generate ITP, Review ITP
+- `src/generation.py` — generation prompt + API call (streaming fallback)
+- `src/gen_schema.py` — ITPItem, HoldPoint, GENERATE_ITP_TOOL
+- `src/gen_report.py` — markdown, docx, xlsx output + items_to_text bridge
+- `src/prompts.py` — adversarial reviewer prompt (now with duplicate detection)
+- `src/schema.py` — Finding, CATEGORIES (now 8 including duplicates_clutter)
+- `src/review.py` — reviewer API call
+- `src/report.py` — review findings to markdown/docx
+- `src/config.py` — MODEL, MAX_TOKENS, GEN_MAX_TOKENS
+
 _Design spec: `docs/superpowers/specs/2026-09-04-itp-generation-design.md`_
 _Implementation plan: `docs/superpowers/plans/2026-09-04-itp-generation.md`_
