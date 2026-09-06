@@ -174,8 +174,9 @@ with your own engineering judgement before use.
             if st.button("Review this draft?"):
                 try:
                     itp_text = gen_report.items_to_text(items)
+                    spec_text = spec_doc.text if spec_doc else None
                     with st.spinner("Running adversarial review on generated ITP…"):
-                        findings = review.run_review(itp_text)
+                        findings = review.run_review(itp_text, spec_text)
                     st.session_state["gen_review_findings"] = findings
                 except Exception as e:
                     st.error(
