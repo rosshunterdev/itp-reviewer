@@ -157,9 +157,14 @@ def to_xlsx(
             cell.alignment = wrap
             cell.border = thin_border
 
-    col_widths = [8, 25, 30, 30, 25, 18, 14, 22, 20, 22]
-    for i, width in enumerate(col_widths, 1):
-        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+    min_widths = [8, 25, 35, 40, 30, 20, 16, 25, 22, 28]
+    for col_idx in range(1, len(COLUMNS) + 1):
+        max_len = len(headers[col_idx - 1])
+        for row_idx in range(2, len(items) + 2):
+            val = ws.cell(row=row_idx, column=col_idx).value or ""
+            max_len = max(max_len, len(str(val)))
+        width = min(max(min_widths[col_idx - 1], max_len * 1.1), 60)
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = width
 
     if hold_points:
         ws_hp = wb.create_sheet("Hold Point Register")
