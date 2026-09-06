@@ -96,3 +96,28 @@ def test_items_to_text_produces_table():
 def test_items_to_text_empty():
     text = gen_report.items_to_text([])
     assert text == ""
+
+
+def test_xlsx_returns_valid_workbook():
+    data = gen_report.to_xlsx(ITEMS, HPS)
+    assert isinstance(data, (bytes, bytearray)) and len(data) > 0
+    import openpyxl, io
+    wb = openpyxl.load_workbook(io.BytesIO(data))
+    ws = wb["ITP"]
+    headers = [ws.cell(row=1, column=c).value for c in range(1, 11)]
+    assert headers[0] == "Item"
+    assert headers[3] == "Acceptance Criteria"
+    assert ws.cell(row=2, column=1).value == "1.1"
+    assert ws.cell(row=3, column=1).value == "2.1"
+    assert ws.cell(row=4, column=2).value == "Demolition"
+    ws_hp = wb["Hold Point Register"]
+    assert ws_hp.cell(row=1, column=1).value == "HP Number"
+    assert ws_hp.cell(row=2, column=1).value == "HP-01"
+
+
+def test_xlsx_no_hold_points():
+    data = gen_report.to_xlsx(ITEMS, [])
+    import openpyxl, io
+    wb = openpyxl.load_workbook(io.BytesIO(data))
+    assert "ITP" in wb.sheetnames
+    assert "Hold Point Register" not in wb.sheetnames

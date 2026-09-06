@@ -145,10 +145,11 @@ with your own engineering judgement before use.
                     )
 
             st.download_button(
-                "Download markdown report",
-                gen_report.to_markdown(items, hps),
-                file_name="generated_itp.md",
-                mime="text/markdown",
+                "Download Excel report",
+                gen_report.to_xlsx(items, hps),
+                file_name="generated_itp.xlsx",
+                mime="application/vnd.openxmlformats-officedocument"
+                ".spreadsheetml.sheet",
             )
             st.download_button(
                 "Download Word report",
@@ -156,6 +157,12 @@ with your own engineering judgement before use.
                 file_name="generated_itp.docx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".wordprocessingml.document",
+            )
+            st.download_button(
+                "Download markdown report",
+                gen_report.to_markdown(items, hps),
+                file_name="generated_itp.md",
+                mime="text/markdown",
             )
 
             # ── Review bridge ─────────────────────────────────────

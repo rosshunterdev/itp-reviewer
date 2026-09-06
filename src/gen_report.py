@@ -119,3 +119,67 @@ def to_docx(
     buf = io.BytesIO()
     document.save(buf)
     return buf.getvalue()
+
+
+def to_xlsx(
+    items: list[gen_schema.ITPItem],
+    hold_points: list[gen_schema.HoldPoint],
+) -> bytes:
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "ITP"
+
+    header_font = Font(bold=True, size=10)
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font_white = Font(bold=True, size=10, color="FFFFFF")
+    wrap = Alignment(wrap_text=True, vertical="top")
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    headers = [label for label, _ in COLUMNS]
+    for col_idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = header_font_white
+        cell.fill = header_fill
+        cell.alignment = wrap
+        cell.border = thin_border
+
+    for row_idx, item in enumerate(items, 2):
+        for col_idx, (_, field) in enumerate(COLUMNS, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=getattr(item, field))
+            cell.alignment = wrap
+            cell.border = thin_border
+
+    col_widths = [8, 25, 30, 30, 25, 18, 14, 22, 20, 22]
+    for i, width in enumerate(col_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+
+    if hold_points:
+        ws_hp = wb.create_sheet("Hold Point Register")
+        hp_headers = ["HP Number", "ITP Item", "Description"]
+        for col_idx, header in enumerate(hp_headers, 1):
+            cell = ws_hp.cell(row=1, column=col_idx, value=header)
+            cell.font = header_font_white
+            cell.fill = header_fill
+            cell.alignment = wrap
+            cell.border = thin_border
+        for row_idx, hp in enumerate(hold_points, 2):
+            ws_hp.cell(row=row_idx, column=1, value=hp.hp_number).border = thin_border
+            ws_hp.cell(row=row_idx, column=2, value=hp.itp_item).border = thin_border
+            cell = ws_hp.cell(row=row_idx, column=3, value=hp.description)
+            cell.alignment = wrap
+            cell.border = thin_border
+        ws_hp.column_dimensions["A"].width = 12
+        ws_hp.column_dimensions["B"].width = 12
+        ws_hp.column_dimensions["C"].width = 50
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
