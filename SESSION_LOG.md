@@ -1,5 +1,35 @@
 # SESSION_LOG.md
 
+## Session 5 — 2026-09-07 — GitHub repo, deployment, password gate
+
+**Did:** Created private GitHub repo, deployed to Streamlit Community Cloud,
+added password protection, decided on client-owned API key approach.
+
+Changes made:
+- Created private GitHub repo `rosshunterdev/itp-reviewer`, pushed all commits
+- Removed `pytest` from `requirements.txt` (not needed in production)
+- Added password gate to `app.py` — reads `PASSWORD` from `st.secrets`, blocks
+  app behind login screen when set, skips for local dev
+- Updated `.streamlit/secrets.toml.example` with `PASSWORD` field
+- User deployed app to Streamlit Community Cloud at
+  https://itp-reviewer.streamlit.app/
+
+**Decided:**
+- Client provides their own Anthropic API key (user's credits running low).
+  Client sent instructions to create account, generate key, share via
+  onetimesecret.com (self-destructing link). See DECISIONS.md.
+- Password gate chosen over no auth — simple shared password, good enough for
+  single-user tool. Not per-user auth.
+
+**Verified:** 38 tests pass after password gate addition.
+
+**Not verified:**
+- Password gate on Streamlit Cloud (no secrets set yet — waiting on client)
+- Client feedback changes from Session 4 still not live-tested
+- New documents in `docs/new-download/` not investigated
+
+**Git:** 3 commits on `main`, all pushed to `origin/main`. Remote now configured.
+
 ## Session 4 — 2026-09-07 — Client feedback, merge, deployment decision
 
 **Did:** Addressed three items of client feedback, merged Phase 2 to main,

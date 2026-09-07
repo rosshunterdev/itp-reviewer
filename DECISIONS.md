@@ -209,6 +209,27 @@ this project is a poor fit — it's a Python/Streamlit app with no database,
 no auth, no user accounts. Those tools shine for Next.js apps with users
 and stored data.
 
+### Password gate, not open access (Session 5)
+
+The Streamlit Cloud URL is public but unlisted. Without protection, anyone
+who discovers the URL can trigger API calls on the configured key. Added a
+simple shared-password gate: `app.py` reads `PASSWORD` from `st.secrets` and
+blocks the entire app behind a login screen. Chose this over per-user auth
+because the app has one user (the client). The password lives in Streamlit
+Cloud's encrypted secrets, not in code. Gracefully skips when `PASSWORD` is
+not set, so local development is unaffected.
+
+### Client-owned API key (Session 5)
+
+User's Anthropic credits running low. Decided the client should create their
+own Anthropic account and API key, billed to the client directly. Key is
+shared once via onetimesecret.com (self-destructing link), then added to
+Streamlit Cloud secrets by the developer. Considered alternatives: (a) adding
+a key input field to the app UI — rejected because the client would have to
+paste it every session or we'd need persistent storage, and (b) giving the
+client Streamlit Cloud dashboard access — rejected because it exposes more
+than needed. One-time secure transfer is the simplest path.
+
 ### Few-shot examples hardcoded in prompt (Session 3)
 
 Eight representative rows from the GT Civil Riverside ITP template are
