@@ -1,5 +1,8 @@
 import os
+from dataclasses import asdict
+
 import streamlit as st
+from evals import checks
 from src import parsing, prompts, review, report, schema
 from src import generation, gen_report
 
@@ -34,6 +37,19 @@ if not _check_password():
 st.title("ITP Reviewer")
 
 tab_generate, tab_review = st.tabs(["Generate ITP", "Review ITP"])
+
+
+def _show_lint(problems):
+    """Visible warning for rule-based check failures on live model output."""
+    if not problems:
+        return
+    st.warning(
+        f"{len(problems)} automated check(s) flagged this output. "
+        "Treat it with extra care."
+    )
+    with st.expander("See automated check results"):
+        for p in problems:
+            st.markdown(f"- {p}")
 
 
 def _safe_parse(f, label):
@@ -119,6 +135,9 @@ with your own engineering judgement before use.
                 )
             st.session_state["gen_items"] = items
             st.session_state["gen_hps"] = hps
+            st.session_state["gen_lint"] = checks.lint_hold_points(
+                [asdict(i) for i in items], [asdict(h) for h in hps]
+            )
             st.session_state["gen_meta"] = report.build_meta(
                 spec_file.name, generation.generation_system_prompt()
             )
@@ -132,6 +151,7 @@ with your own engineering judgement before use.
             st.warning("No ITP items were generated.")
         else:
             st.subheader(f"{len(items)} item(s) generated")
+            _show_lint(st.session_state.get("gen_lint"))
 
             groups = {}
             for item in items:
@@ -201,6 +221,9 @@ with your own engineering judgement before use.
                     with st.spinner("Running adversarial review on generated ITP…"):
                         findings = review.run_review(itp_text, spec_text)
                     st.session_state["gen_review_findings"] = findings
+                    st.session_state["gen_review_lint"] = checks.lint_findings(
+                        [asdict(f) for f in findings]
+                    )
                     st.session_state["gen_review_meta"] = report.build_meta(
                         f"{spec_file.name} (AI-generated draft)",
                         prompts.system_prompt(),
@@ -214,6 +237,7 @@ with your own engineering judgement before use.
                     st.success("No review findings — the generated ITP looks solid.")
                 else:
                     st.subheader(f"{len(findings)} review finding(s)")
+                    _show_lint(st.session_state.get("gen_review_lint"))
                     by_cat = {
                         c: [f for f in findings if f.category == c]
                         for c in schema.CATEGORIES
@@ -327,6 +351,9 @@ reviewer to consider. Always apply your own engineering judgement.
                     proposal_doc.text if proposal_doc else None,
                 )
             st.session_state["findings"] = findings
+            st.session_state["findings_lint"] = checks.lint_findings(
+                [asdict(f) for f in findings]
+            )
             source = itp_file.name
             if proposal_file:
                 source += f" (cross-checked against {proposal_file.name})"
@@ -342,6 +369,7 @@ reviewer to consider. Always apply your own engineering judgement.
             st.success("No findings identified.")
         else:
             st.subheader(f"{len(findings)} finding(s)")
+            _show_lint(st.session_state.get("findings_lint"))
             by_cat = {
                 c: [f for f in findings if f.category == c]
                 for c in schema.CATEGORIES
