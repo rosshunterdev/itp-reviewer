@@ -28,7 +28,8 @@ def meta_pairs(meta: dict | None) -> list[tuple[str, str]]:
     return [(label, str(meta[key])) for key, label in META_LABELS if meta.get(key)]
 
 
-def _group(findings):
+def group_findings(findings):
+    """Bucket findings by category; unknown categories land in 'other'."""
     grouped = {c: [] for c in schema.CATEGORIES}
     for f in findings:
         grouped.get(f.category, grouped["other"]).append(f)
@@ -43,7 +44,7 @@ def to_markdown(findings, meta: dict | None = None) -> str:
     if not findings:
         return "\n".join(header) + "\nNo findings were identified."
     lines = header + [f"{len(findings)} finding(s).", ""]
-    grouped = _group(findings)
+    grouped = group_findings(findings)
     for cat in schema.CATEGORIES:
         items = grouped[cat]
         if not items:
@@ -69,7 +70,7 @@ def to_docx(findings, meta: dict | None = None) -> bytes:
         document.add_paragraph("No findings were identified.")
     else:
         document.add_paragraph(f"{len(findings)} finding(s).")
-        grouped = _group(findings)
+        grouped = group_findings(findings)
         for cat in schema.CATEGORIES:
             items = grouped[cat]
             if not items:

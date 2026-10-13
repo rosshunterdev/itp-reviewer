@@ -238,10 +238,7 @@ with your own engineering judgement before use.
                 else:
                     st.subheader(f"{len(findings)} review finding(s)")
                     _show_lint(st.session_state.get("gen_review_lint"))
-                    by_cat = {
-                        c: [f for f in findings if f.category == c]
-                        for c in schema.CATEGORIES
-                    }
+                    by_cat = report.group_findings(findings)
                     for cat in schema.CATEGORIES:
                         cat_items = by_cat[cat]
                         if not cat_items:
@@ -370,10 +367,7 @@ reviewer to consider. Always apply your own engineering judgement.
         else:
             st.subheader(f"{len(findings)} finding(s)")
             _show_lint(st.session_state.get("findings_lint"))
-            by_cat = {
-                c: [f for f in findings if f.category == c]
-                for c in schema.CATEGORIES
-            }
+            by_cat = report.group_findings(findings)
             for cat in schema.CATEGORIES:
                 cat_items = by_cat[cat]
                 if not cat_items:
