@@ -1,6 +1,9 @@
 import os
+from dataclasses import asdict
+
 import streamlit as st
-from src import parsing, review, report, schema
+from evals import checks
+from src import parsing, prompts, review, report, schema
 from src import generation, gen_report
 
 st.set_page_config(page_title="ITP Reviewer", layout="wide")
@@ -34,6 +37,19 @@ if not _check_password():
 st.title("ITP Reviewer")
 
 tab_generate, tab_review = st.tabs(["Generate ITP", "Review ITP"])
+
+
+def _show_lint(problems):
+    """Visible warning for rule-based check failures on live model output."""
+    if not problems:
+        return
+    st.warning(
+        f"{len(problems)} automated check(s) flagged this output. "
+        "Treat it with extra care."
+    )
+    with st.expander("See automated check results"):
+        for p in problems:
+            st.markdown(f"- {p}")
 
 
 def _safe_parse(f, label):
@@ -119,12 +135,14 @@ with your own engineering judgement before use.
                 )
             st.session_state["gen_items"] = items
             st.session_state["gen_hps"] = hps
-        except Exception as e:
-            st.error(
-                "Generation could not be completed. Check your "
-                "ANTHROPIC_API_KEY and network connection, then try again."
-                f"\n\nDetails: {e}"
+            st.session_state["gen_lint"] = checks.lint_hold_points(
+                [asdict(i) for i in items], [asdict(h) for h in hps]
             )
+            st.session_state["gen_meta"] = report.build_meta(
+                spec_file.name, generation.generation_system_prompt()
+            )
+        except Exception as e:
+            st.error(f"Generation could not be completed. {review.explain_error(e)}")
 
     if st.session_state.get("gen_items") is not None:
         items = st.session_state["gen_items"]
@@ -133,6 +151,7 @@ with your own engineering judgement before use.
             st.warning("No ITP items were generated.")
         else:
             st.subheader(f"{len(items)} item(s) generated")
+            _show_lint(st.session_state.get("gen_lint"))
 
             groups = {}
             for item in items:
@@ -170,21 +189,21 @@ with your own engineering judgement before use.
 
             st.download_button(
                 "Download Excel report",
-                gen_report.to_xlsx(items, hps),
+                gen_report.to_xlsx(items, hps, st.session_state.get("gen_meta")),
                 file_name="generated_itp.xlsx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".spreadsheetml.sheet",
             )
             st.download_button(
                 "Download Word report",
-                gen_report.to_docx(items, hps),
+                gen_report.to_docx(items, hps, st.session_state.get("gen_meta")),
                 file_name="generated_itp.docx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".wordprocessingml.document",
             )
             st.download_button(
                 "Download markdown report",
-                gen_report.to_markdown(items, hps),
+                gen_report.to_markdown(items, hps, st.session_state.get("gen_meta")),
                 file_name="generated_itp.md",
                 mime="text/markdown",
             )
@@ -202,11 +221,15 @@ with your own engineering judgement before use.
                     with st.spinner("Running adversarial review on generated ITP…"):
                         findings = review.run_review(itp_text, spec_text)
                     st.session_state["gen_review_findings"] = findings
-                except Exception as e:
-                    st.error(
-                        "Review could not be completed. "
-                        f"Details: {e}"
+                    st.session_state["gen_review_lint"] = checks.lint_findings(
+                        [asdict(f) for f in findings]
                     )
+                    st.session_state["gen_review_meta"] = report.build_meta(
+                        f"{spec_file.name} (AI-generated draft)",
+                        prompts.system_prompt(),
+                    )
+                except Exception as e:
+                    st.error(f"Review could not be completed. {review.explain_error(e)}")
 
             if st.session_state.get("gen_review_findings") is not None:
                 findings = st.session_state["gen_review_findings"]
@@ -214,10 +237,8 @@ with your own engineering judgement before use.
                     st.success("No review findings — the generated ITP looks solid.")
                 else:
                     st.subheader(f"{len(findings)} review finding(s)")
-                    by_cat = {
-                        c: [f for f in findings if f.category == c]
-                        for c in schema.CATEGORIES
-                    }
+                    _show_lint(st.session_state.get("gen_review_lint"))
+                    by_cat = report.group_findings(findings)
                     for cat in schema.CATEGORIES:
                         cat_items = by_cat[cat]
                         if not cat_items:
@@ -239,14 +260,18 @@ with your own engineering judgement before use.
                                 )
                     st.download_button(
                         "Download review report (markdown)",
-                        report.to_markdown(findings),
+                        report.to_markdown(
+                            findings, st.session_state.get("gen_review_meta")
+                        ),
                         file_name="generated_itp_review.md",
                         mime="text/markdown",
                         key="gen_review_md",
                     )
                     st.download_button(
                         "Download review report (Word)",
-                        report.to_docx(findings),
+                        report.to_docx(
+                            findings, st.session_state.get("gen_review_meta")
+                        ),
                         file_name="generated_itp_review.docx",
                         mime="application/vnd.openxmlformats-officedocument"
                         ".wordprocessingml.document",
@@ -323,12 +348,17 @@ reviewer to consider. Always apply your own engineering judgement.
                     proposal_doc.text if proposal_doc else None,
                 )
             st.session_state["findings"] = findings
-        except Exception as e:
-            st.error(
-                "The review could not be completed. Check your "
-                "ANTHROPIC_API_KEY and network connection, then try again."
-                f"\n\nDetails: {e}"
+            st.session_state["findings_lint"] = checks.lint_findings(
+                [asdict(f) for f in findings]
             )
+            source = itp_file.name
+            if proposal_file:
+                source += f" (cross-checked against {proposal_file.name})"
+            st.session_state["findings_meta"] = report.build_meta(
+                source, prompts.system_prompt()
+            )
+        except Exception as e:
+            st.error(f"The review could not be completed. {review.explain_error(e)}")
 
     if st.session_state.get("findings") is not None:
         findings = st.session_state["findings"]
@@ -336,10 +366,8 @@ reviewer to consider. Always apply your own engineering judgement.
             st.success("No findings identified.")
         else:
             st.subheader(f"{len(findings)} finding(s)")
-            by_cat = {
-                c: [f for f in findings if f.category == c]
-                for c in schema.CATEGORIES
-            }
+            _show_lint(st.session_state.get("findings_lint"))
+            by_cat = report.group_findings(findings)
             for cat in schema.CATEGORIES:
                 cat_items = by_cat[cat]
                 if not cat_items:
@@ -358,13 +386,13 @@ reviewer to consider. Always apply your own engineering judgement.
                         )
             st.download_button(
                 "Download markdown report",
-                report.to_markdown(findings),
+                report.to_markdown(findings, st.session_state.get("findings_meta")),
                 file_name="itp_review.md",
                 mime="text/markdown",
             )
             st.download_button(
                 "Download Word report",
-                report.to_docx(findings),
+                report.to_docx(findings, st.session_state.get("findings_meta")),
                 file_name="itp_review.docx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".wordprocessingml.document",

@@ -126,3 +126,16 @@ def test_run_generation_returns_empty_on_no_tool_block():
     items, hps = generation.run_generation("spec", client=client)
     assert items == []
     assert hps == []
+
+
+def test_run_generation_truncation_raises_truncated_response():
+    import pytest
+    from src import review
+
+    resp = MagicMock()
+    resp.content = []
+    resp.stop_reason = "max_tokens"
+    client = MagicMock()
+    client.messages.create.return_value = resp
+    with pytest.raises(review.TruncatedResponse):
+        generation.run_generation("spec", client=client)
