@@ -120,11 +120,7 @@ with your own engineering judgement before use.
             st.session_state["gen_items"] = items
             st.session_state["gen_hps"] = hps
         except Exception as e:
-            st.error(
-                "Generation could not be completed. Check your "
-                "ANTHROPIC_API_KEY and network connection, then try again."
-                f"\n\nDetails: {e}"
-            )
+            st.error(f"Generation could not be completed. {review.explain_error(e)}")
 
     if st.session_state.get("gen_items") is not None:
         items = st.session_state["gen_items"]
@@ -203,10 +199,7 @@ with your own engineering judgement before use.
                         findings = review.run_review(itp_text, spec_text)
                     st.session_state["gen_review_findings"] = findings
                 except Exception as e:
-                    st.error(
-                        "Review could not be completed. "
-                        f"Details: {e}"
-                    )
+                    st.error(f"Review could not be completed. {review.explain_error(e)}")
 
             if st.session_state.get("gen_review_findings") is not None:
                 findings = st.session_state["gen_review_findings"]
@@ -324,11 +317,7 @@ reviewer to consider. Always apply your own engineering judgement.
                 )
             st.session_state["findings"] = findings
         except Exception as e:
-            st.error(
-                "The review could not be completed. Check your "
-                "ANTHROPIC_API_KEY and network connection, then try again."
-                f"\n\nDetails: {e}"
-            )
+            st.error(f"The review could not be completed. {review.explain_error(e)}")
 
     if st.session_state.get("findings") is not None:
         findings = st.session_state["findings"]

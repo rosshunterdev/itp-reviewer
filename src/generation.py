@@ -1,5 +1,5 @@
 import re
-from src import config, gen_schema
+from src import config, gen_schema, review
 
 
 ITP_EXAMPLES = """
@@ -107,7 +107,7 @@ def run_generation(
         else:
             raise
     if resp.stop_reason == "max_tokens":
-        raise RuntimeError(
+        raise review.TruncatedResponse(
             "The model ran out of output space before finishing the ITP. "
             "This usually means the specification is very large. "
             "Try uploading just the specification without supporting documents."
