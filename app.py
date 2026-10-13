@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-from src import parsing, review, report, schema
+from src import parsing, prompts, review, report, schema
 from src import generation, gen_report
 
 st.set_page_config(page_title="ITP Reviewer", layout="wide")
@@ -119,6 +119,9 @@ with your own engineering judgement before use.
                 )
             st.session_state["gen_items"] = items
             st.session_state["gen_hps"] = hps
+            st.session_state["gen_meta"] = report.build_meta(
+                spec_file.name, generation.generation_system_prompt()
+            )
         except Exception as e:
             st.error(f"Generation could not be completed. {review.explain_error(e)}")
 
@@ -166,21 +169,21 @@ with your own engineering judgement before use.
 
             st.download_button(
                 "Download Excel report",
-                gen_report.to_xlsx(items, hps),
+                gen_report.to_xlsx(items, hps, st.session_state.get("gen_meta")),
                 file_name="generated_itp.xlsx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".spreadsheetml.sheet",
             )
             st.download_button(
                 "Download Word report",
-                gen_report.to_docx(items, hps),
+                gen_report.to_docx(items, hps, st.session_state.get("gen_meta")),
                 file_name="generated_itp.docx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".wordprocessingml.document",
             )
             st.download_button(
                 "Download markdown report",
-                gen_report.to_markdown(items, hps),
+                gen_report.to_markdown(items, hps, st.session_state.get("gen_meta")),
                 file_name="generated_itp.md",
                 mime="text/markdown",
             )
@@ -198,6 +201,10 @@ with your own engineering judgement before use.
                     with st.spinner("Running adversarial review on generated ITP…"):
                         findings = review.run_review(itp_text, spec_text)
                     st.session_state["gen_review_findings"] = findings
+                    st.session_state["gen_review_meta"] = report.build_meta(
+                        f"{spec_file.name} (AI-generated draft)",
+                        prompts.system_prompt(),
+                    )
                 except Exception as e:
                     st.error(f"Review could not be completed. {review.explain_error(e)}")
 
@@ -232,14 +239,18 @@ with your own engineering judgement before use.
                                 )
                     st.download_button(
                         "Download review report (markdown)",
-                        report.to_markdown(findings),
+                        report.to_markdown(
+                            findings, st.session_state.get("gen_review_meta")
+                        ),
                         file_name="generated_itp_review.md",
                         mime="text/markdown",
                         key="gen_review_md",
                     )
                     st.download_button(
                         "Download review report (Word)",
-                        report.to_docx(findings),
+                        report.to_docx(
+                            findings, st.session_state.get("gen_review_meta")
+                        ),
                         file_name="generated_itp_review.docx",
                         mime="application/vnd.openxmlformats-officedocument"
                         ".wordprocessingml.document",
@@ -316,6 +327,12 @@ reviewer to consider. Always apply your own engineering judgement.
                     proposal_doc.text if proposal_doc else None,
                 )
             st.session_state["findings"] = findings
+            source = itp_file.name
+            if proposal_file:
+                source += f" (cross-checked against {proposal_file.name})"
+            st.session_state["findings_meta"] = report.build_meta(
+                source, prompts.system_prompt()
+            )
         except Exception as e:
             st.error(f"The review could not be completed. {review.explain_error(e)}")
 
@@ -347,13 +364,13 @@ reviewer to consider. Always apply your own engineering judgement.
                         )
             st.download_button(
                 "Download markdown report",
-                report.to_markdown(findings),
+                report.to_markdown(findings, st.session_state.get("findings_meta")),
                 file_name="itp_review.md",
                 mime="text/markdown",
             )
             st.download_button(
                 "Download Word report",
-                report.to_docx(findings),
+                report.to_docx(findings, st.session_state.get("findings_meta")),
                 file_name="itp_review.docx",
                 mime="application/vnd.openxmlformats-officedocument"
                 ".wordprocessingml.document",

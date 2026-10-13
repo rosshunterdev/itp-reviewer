@@ -1,6 +1,7 @@
 import io
 from collections import OrderedDict
 from src import gen_schema
+from src.report import meta_pairs
 
 
 COLUMNS = [
@@ -40,12 +41,15 @@ def items_to_text(items: list[gen_schema.ITPItem]) -> str:
 def to_markdown(
     items: list[gen_schema.ITPItem],
     hold_points: list[gen_schema.HoldPoint],
+    meta: dict | None = None,
 ) -> str:
+    header = ["# Generated ITP", ""]
+    header += [f"- **{label}:** {value}" for label, value in meta_pairs(meta)]
+    if meta:
+        header.append("")
     if not items:
-        return "# Generated ITP\n\nNo ITP items were generated.\n"
-    lines = [
-        "# Generated ITP",
-        "",
+        return "\n".join(header) + "\nNo ITP items were generated.\n"
+    lines = header + [
         f"{len(items)} item(s) across "
         f"{len(_group_by_work_package(items))} work package(s).",
         "",
@@ -78,11 +82,14 @@ def to_markdown(
 def to_docx(
     items: list[gen_schema.ITPItem],
     hold_points: list[gen_schema.HoldPoint],
+    meta: dict | None = None,
 ) -> bytes:
     import docx
 
     document = docx.Document()
     document.add_heading("Generated ITP", level=0)
+    for label, value in meta_pairs(meta):
+        document.add_paragraph(f"{label}: {value}")
     if not items:
         document.add_paragraph("No ITP items were generated.")
     else:
@@ -124,6 +131,7 @@ def to_docx(
 def to_xlsx(
     items: list[gen_schema.ITPItem],
     hold_points: list[gen_schema.HoldPoint],
+    meta: dict | None = None,
 ) -> bytes:
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -184,6 +192,15 @@ def to_xlsx(
         ws_hp.column_dimensions["A"].width = 12
         ws_hp.column_dimensions["B"].width = 12
         ws_hp.column_dimensions["C"].width = 50
+
+    pairs = meta_pairs(meta)
+    if pairs:
+        ws_meta = wb.create_sheet("Run info")
+        for row_idx, (label, value) in enumerate(pairs, 1):
+            ws_meta.cell(row=row_idx, column=1, value=label).font = header_font
+            ws_meta.cell(row=row_idx, column=2, value=value)
+        ws_meta.column_dimensions["A"].width = 24
+        ws_meta.column_dimensions["B"].width = 50
 
     buf = io.BytesIO()
     wb.save(buf)
